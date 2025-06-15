@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<!-- HTML5のドキュメントタイプ宣言 -->
+<html lang="ja">
+<head>
+    <!-- 文字エンコーディングをUTF-8に設定（日本語などの多言語に対応） -->
+    <meta charset="UTF-8">
+    <!-- レスポンシブデザイン用のビューポート設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ブラウザのタブに表示されるタイトル -->
+    <title>TODOリストアプリ</title>
+    <style>
+        /* 全要素に適用される基本スタイル設定 */
+        * {
+            margin: 0;              /* 外側の余白を0に */
+            padding: 0;             /* 内側の余白を0に */
+            box-sizing: border-box; /* paddingとborderを要素の幅・高さに含める */
+        }
+
+        /* ページ全体の背景とレイアウト設定 */
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;   /* 日本語フォント */
+            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);      /* 爽やかなグラデーション */
+            min-height: 100vh;                                                  /* 最小高さを画面の高さに */
+            padding: 20px;                                                      /* 画面端からの余白 */
+        }
+
+        /* メインコンテナ */
+        .container {
+            max-width: 600px;                                   /* 最大幅を600pxに制限 */
+            margin: 0 auto;                                     /* 中央寄せ */
+            background: rgba(255, 255, 255, 0.95);              /* 半透明の白背景 */
+            border-radius: 20px;                                /* 角を丸くする */
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);        /* 影で立体感 */
+            overflow: hidden;                                   /* はみ出し部分を隠す */
+            transition: transform 0.3s ease;                    /* ホバー時のアニメーション */
+        }
+
+        /* ヘッダー部分 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);     /* 紫のグラデーション */
+            color: white;                                                       /* 白文字 */
+            padding: 30px;                                                      /* 内側の余白 */
+            text-align: center;                                                 /* 中央寄せ */
+        }
+
+        /* アプリタイトル */
+        .header h1 {
+            font-size: 2.5rem;                          /* 大きめの文字サイズ */
+            margin-bottom: 10px;                        /* 下側の余白 */
+            font-weight: 600;                           /* 太めのフォント */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* 文字に影 */
+        }
+
+        /* 日付表示 */
+        .date {
+            font-size: 1.1rem;                          /* 少し大きめの文字 */
+            opacity: 0.9;                               /* 少し透明に */
+        }
+
+        /* 統計情報の表示 */
+        .stats {
+            display: flex;                              /* フレックスボックス */
+            justify-content: space-around;              /* 均等配置 */
+            margin-top: 20px;                           /* 上側の余白 */
+            padding-top: 20px;                          /* 内側の上余白 */
+            border-top: 1px solid rgba(255, 255, 255, 0.3); /* 上部に境界線 */
+        }
+
+        .stat-item {
+            text-align: center;                         /* 中央寄せ */
+        }
+
+        .stat-number {
+            font-size: 2rem;                            /* 大きめの数字 */
+            font-weight: bold;                          /* 太字 */
+            display: block;                             /* ブロック要素として表示 */
+        }
+
+        .stat-label {
+            font-size: 0.9rem;                          /* 小さめの文字 */
+            opacity: 0.8;                               /* 少し透明に */
+        }
+
+        /* 入力エリア */
+        .input-section {
+            padding: 30px;                              /* 内側の余白 */
+            background: #f8f9fa;                        /* 薄いグレーの背景 */
+            border-bottom: 1px solid #e9ecef;           /* 下部に境界線 */
+        }
+
+        /* 入力フォーム */
+        .input-form {
+            display: flex;                              /* フレックスボックス */
+            gap: 10px;                                  /* 要素間の隙間 */
+        }
+
+        /* テキスト入力欄 */
+        .todo-input {
+            flex: 1;                                    /* 残りの幅を全て使う */
+            padding: 15px 20px;                         /* 内側の余白 */
+            border: 2px solid #e9ecef;                  /* 薄いグレーの枠線 */
+            border-radius: 10px;                        /* 角を丸くする */
+            font-size: 1rem;                            /* 標準の文字サイズ */
+            transition: all 0.3s ease;                  /* アニメーション設定 */
+        }
+
+        /* 入力欄フォーカス時 */
+        .todo-input:focus {
+            outline: none;                              /* デフォルトの枠線を消す */
+            border-color: #667eea;                      /* 紫の枠線に変更 */
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); /* 薄い影を追加 */
+        }
+
+        /* 追加ボタン */
+        .add-button {
+            padding: 15px 30px;                         /* 内側の余白 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* グラデーション背景 */
+            color: white;                               /* 白文字 */
+            border: none;                               /* 枠線なし */
+            border-radius: 10px;                        /* 角を丸くする */
+            font-size: 1rem;                            /* 標準の文字サイズ */
+            font-weight: 600;                           /* 太めのフォント */
+            cursor: pointer;                            /* カーソルを指マークに */
+            transition: all 0.3s ease;                  /* アニメーション設定 */
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3); /* 影を追加 */
+        }
+
+        /* 追加ボタンホバー時 */
+        .add-button:hover {
+            transform: translateY(-2px);                /* 上に移動 */
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4); /* 影を強調 */
+        }
+
+        /* 追加ボタンクリック時 */
+        .add-button:active {
+            transform: translateY(0);                   /* 元の位置に戻る */
+        }
+
+        /* フィルターボタンエリア */
+        .filter-section {
+            padding: 20px 30px;                         /* 内側の余白 */
+            background: white;                          /* 白背景 */
+            display: flex;                              /* フレックスボックス */
+            justify-content: center;                    /* 中央寄せ */
+            gap: 10px;                                  /* ボタン間の隙間 */
+            flex-wrap: wrap;                            /* 折り返しを許可 */
+        }
+
+        /* フィルターボタン */
+        .filter-button {
+            padding: 8px 20px;                          /* 内側の余白 */
+            background: #e9ecef;                        /* 薄いグレーの背景 */
+            border: none;                               /* 枠線なし */
+            border-radius: 20px;                        /* 丸いボタン */
+            font-size: 0.9rem;                          /* 少し小さめの文字 */
+            cursor: pointer;                            /* カーソルを指マークに */
+            transition: all 0.3s ease;                  /* アニメーション設定 */
+        }
+
+        /* フィルターボタンホバー時 */
+        .filter-button:hover {
+            background: #dee2e6;                        /* 少し濃いグレー */
+        }
+
+        /* アクティブなフィルターボタン */
+        .filter-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* グラデーション背景 */
+            color: white;                               /* 白文字 */
+        }
+
+        /* TODOリストエリア */
+        .todo-list {
+            padding: 20px 30px 30px;                    /* 内側の余白 */
+            max-height: 400px;                          /* 最大高さ */
+            overflow-y: auto;                           /* 縦スクロールを有効化 */
+        }
+
+        /* リストが空の時のメッセージ */
+        .empty-message {
+            text-align: center;                         /* 中央寄せ */
+            color: #adb5bd;                             /* グレーの文字 */
+            padding: 40px;                              /* 内側の余白 */
+            font-size: 1.1rem;                          /* 少し大きめの文字 */
+        }
+
+        /* 各TODOアイテム */
+        .todo-item {
+            background: white;                          /* 白背景 */
+            border: 1px solid #e9ecef;                  /* 薄いグレーの枠線 */
+            border-radius: 10px;                        /* 角を丸くする */
+            padding: 15px 20px;                         /* 内側の余白 */
+            margin-bottom: 10px;                        /* 下側の余白 */
+            display: flex;                              /* フレックスボックス */
+            align-items: center;                        /* 垂直方向中央寄せ */
+            gap: 15px;                                  /* 要素間の隙間 */
+            transition: all 0.3s ease;                  /* アニメーション設定 */
+            animation: slideIn 0.3s ease-out;           /* スライドインアニメーション */
+        }
+
+        /* TODOアイテムホバー時 */
+        .todo-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* 影を追加 */
+            transform: translateX(5px);                 /* 右に少し移動 */
+        }
+
+        /* 完了したTODOアイテム */
+        .todo-item.completed {
+            opacity: 0.6;                               /* 半透明に */
+            background: #f8f9fa;                        /* 薄いグレーの背景 */
+        }
+
+        /* チェックボックス */
+        .checkbox {
+            width: 24px;                                /* 幅 */
+            height: 24px;                               /* 高さ */
+            border: 2px solid #667eea;                  /* 紫の枠線 */
+            border-radius: 6px;                         /* 角を丸くする */
+            cursor: pointer;                            /* カーソルを指マークに */
+            position: relative;                         /* 相対位置指定 */
+            flex-shrink: 0;                             /* 縮小を防ぐ */
+            transition: all 0.3s ease;                  /* アニメーション設定 */
+        }
+
+        /* チェックマーク */
+        .checkbox::after {
+            content: '✓';                               /* チェックマーク */
+            position: absolute;                         /* 絶対位置指定 */
+            top: 50%;                                   /* 上から50% */
+            left: 50%;                                  /* 左から50% */
+            transform: translate(-50%, -50%) scale(0);  /* 中央配置&非表示 */
+            color: white;                               /* 白色 */
+            font-size: 14px;                            /* 文字サイズ */
+            font-weight: bold;                          /* 太字 */
+            transition: transform 0.2s ease;            /* アニメーション設定 */
+        }
+
+        /* チェック済みのチェックボックス */
+        .checkbox.checked {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* グラデーション背景 */
+            border-color: transparent;                  /* 枠線を透明に */
+        }
+
+        .checkbox.checked::after {
+            transform: translate(-50%, -50%) scale(1);  /* チェックマークを表示 */
+        }
+
+        /* TODOテキスト */
+        .todo-text {
+            flex: 1;                                    /* 残りの幅を全て使う */
+            font-size: 1rem;                            /* 標準の文字サイズ */
+            color: #212529;                             /* 濃いグレーの文字 */
+            word-break: break-word;                     /* 長い単語を折り返す */
+        }
+
+        /* 完了したTODOのテキスト */
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;              /* 打ち消し線 */
+            color: #6c757d;                             /* グレーの文字 */
+        }
+
+        /* 削除ボタン */
+        .delete-button {
+            padding: 5px 15px;                          /* 内側の余白 */
+            background: #e74c3c;                        /* 赤色の背景 */
+            color: white;                               /* 白文字 */
+            border: none;                               /* 枠線なし */
+            border-radius: 5px;                         /* 角を丸くする */
+            font-size: 0.9rem;                          /* 少し小さめの文字 */
+            cursor: pointer;                            /* カーソルを指マークに */
+            transition: all 0.3s ease;                  /* アニメーション設定 */
+            opacity: 0.8;                               /* 少し透明に */
+        }
+
+        /* 削除ボタンホバー時 */
+        .delete-button:hover {
+            opacity: 1;                                 /* 不透明に */
+            background: #c0392b;                        /* 濃い赤 */
+        }
+
+        /* スライドインアニメーション */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* スライドアウトアニメーション */
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        /* 削除時のアニメーション */
+        .todo-item.removing {
+            animation: slideOut 0.3s ease-out forwards;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2rem;                        /* タイトルを小さく */
+            }
+            
+            .stats {
+                gap: 20px;                              /* 統計情報の間隔を調整 */
+            }
+            
+            .stat-number {
+                font-size: 1.5rem;                      /* 数字を小さく */
+            }
+            
+            .input-form {
+                flex-direction: column;                 /* 縦並びに変更 */
+            }
+            
+            .add-button {
+                width: 100%;                            /* ボタンを幅いっぱいに */
+            }
+            
+            .todo-list {
+                padding: 20px;                          /* 余白を調整 */
+            }
+        }
+
+        /* スクロールバーのカスタマイズ */
+        .todo-list::-webkit-scrollbar {
+            width: 8px;                                 /* スクロールバーの幅 */
+        }
+
+        .todo-list::-webkit-scrollbar-track {
+            background: #f1f1f1;                        /* トラックの背景色 */
+            border-radius: 10px;                        /* 角を丸くする */
+        }
+
+        .todo-list::-webkit-scrollbar-thumb {
+            background: #888;                           /* つまみの色 */
+            border-radius: 10px;                        /* 角を丸くする */
+        }
+
+        .todo-list::-webkit-scrollbar-thumb:hover {
+            background: #555;                           /* ホバー時の色 */
+        }
+    </style>
+</head>
+<body>
+    <!-- メインコンテナ -->
+    <div class="container">
+        <!-- ヘッダー部分 -->
+        <div class="header">
+            <h1>TODOリスト</h1>
+            <div class="date" id="currentDate">2024年1月1日</div>
+            
+            <!-- 統計情報 -->
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalCount">0</span>
+                    <span class="stat-label">全て</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="activeCount">0</span>
+                    <span class="stat-label">未完了</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="completedCount">0</span>
+                    <span class="stat-label">完了</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 入力エリア -->
+        <div class="input-section">
+            <form class="input-form" id="todoForm">
+                <input 
+                    type="text" 
+                    class="todo-input" 
+                    id="todoInput" 
+                    placeholder="新しいタスクを入力..."
+                    autocomplete="off"
+                >
+                <button type="submit" class="add-button">追加</button>
+            </form>
+        </div>
+        
+        <!-- フィルターボタン -->
+        <div class="filter-section">
+            <button class="filter-button active" data-filter="all">すべて</button>
+            <button class="filter-button" data-filter="active">未完了</button>
+            <button class="filter-button" data-filter="completed">完了</button>
+        </div>
+        
+        <!-- TODOリスト -->
+        <div class="todo-list" id="todoList">
+            <div class="empty-message">タスクがありません</div>
+        </div>
+    </div>
+
+    <script>
+        // TODOリストを管理する配列（ローカルストレージから読み込み）
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let currentFilter = 'all';  // 現在のフィルター状態
+
+        // DOM要素の取得
+        const todoForm = document.getElementById('todoForm');
+        const todoInput = document.getElementById('todoInput');
+        const todoList = document.getElementById('todoList');
+        const currentDate = document.getElementById('currentDate');
+        const totalCount = document.getElementById('totalCount');
+        const activeCount = document.getElementById('activeCount');
+        const completedCount = document.getElementById('completedCount');
+        const filterButtons = document.querySelectorAll('.filter-button');
+
+        // 現在の日付を表示する関数
+        function updateDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            currentDate.textContent = now.toLocaleDateString('ja-JP', options);
+        }
+
+        // 統計情報を更新する関数
+        function updateStats() {
+            const total = todos.length;
+            const completed = todos.filter(todo => todo.completed).length;
+            const active = total - completed;
+            
+            totalCount.textContent = total;
+            activeCount.textContent = active;
+            completedCount.textContent = completed;
+        }
+
+        // TODOリストを表示する関数
+        function renderTodos() {
+            // フィルタリング
+            let filteredTodos = todos;
+            if (currentFilter === 'active') {
+                filteredTodos = todos.filter(todo => !todo.completed);
+            } else if (currentFilter === 'completed') {
+                filteredTodos = todos.filter(todo => todo.completed);
+            }
+            
+            // リストをクリア
+            todoList.innerHTML = '';
+            
+            // TODOがない場合のメッセージ
+            if (filteredTodos.length === 0) {
+                todoList.innerHTML = '<div class="empty-message">タスクがありません</div>';
+                return;
+            }
+            
+            // 各TODOを表示
+            filteredTodos.forEach(todo => {
+                const todoItem = createTodoElement(todo);
+                todoList.appendChild(todoItem);
+            });
+        }
+
+        // TODO要素を作成する関数
+        function createTodoElement(todo) {
+            // メインのdiv要素を作成
+            const todoItem = document.createElement('div');
+            todoItem.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+            todoItem.dataset.id = todo.id;
+            
+            // チェックボックスを作成
+            const checkbox = document.createElement('div');
+            checkbox.className = `checkbox ${todo.completed ? 'checked' : ''}`;
+            checkbox.onclick = () => toggleTodo(todo.id);
+            
+            // テキスト部分を作成
+            const todoText = document.createElement('div');
+            todoText.className = 'todo-text';
+            todoText.textContent = todo.text;
+            
+            // 削除ボタンを作成
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-button';
+            deleteButton.textContent = '削除';
+            deleteButton.onclick = () => deleteTodo(todo.id);
+            
+            // 要素を組み立て
+            todoItem.appendChild(checkbox);
+            todoItem.appendChild(todoText);
+            todoItem.appendChild(deleteButton);
+            
+            return todoItem;
+        }
+
+        // 新しいTODOを追加する関数
+        function addTodo(text) {
+            // 空のテキストは追加しない
+            if (!text.trim()) return;
+            
+            // 新しいTODOオブジェクトを作成
+            const newTodo = {
+                id: Date.now(),         // ユニークなID（タイムスタンプを使用）
+                text: text.trim(),      // 前後の空白を削除
+                completed: false,       // 初期状態は未完了
+                createdAt: new Date()   // 作成日時
+            };
+            
+            // 配列の先頭に追加（新しいものが上に表示される）
+            todos.unshift(newTodo);
+            
+            // ローカルストレージに保存
+            saveTodos();
+            
+            // 表示を更新
+            renderTodos();
+            updateStats();
+        }
+
+        // TODOの完了状態を切り替える関数
+        function toggleTodo(id) {
+            // 該当するTODOを見つけて状態を反転
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                saveTodos();
+                renderTodos();
+                updateStats();
+            }
+        }
+
+        // TODOを削除する関数
+        function deleteTodo(id) {
+            // 削除アニメーションを追加
+            const todoElement = document.querySelector(`[data-id="${id}"]`);
+            if (todoElement) {
+                todoElement.classList.add('removing');
+                
+                // アニメーション終了後に削除
+                setTimeout(() => {
+                    todos = todos.filter(t => t.id !== id);
+                    saveTodos();
+                    renderTodos();
+                    updateStats();
+                }, 300);
+            }
+        }
+
+        // ローカルストレージに保存する関数
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // フィルターを設定する関数
+        function setFilter(filter) {
+            currentFilter = filter;
+            
+            // アクティブなボタンのスタイルを更新
+            filterButtons.forEach(button => {
+                if (button.dataset.filter === filter) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+            
+            // TODOリストを再表示
+            renderTodos();
+        }
+
+        // イベントリスナーの設定
+        // フォーム送信時
+        todoForm.addEventListener('submit', (e) => {
+            e.preventDefault();     // デフォルトの送信動作を防ぐ
+            const text = todoInput.value;
+            addTodo(text);
+            todoInput.value = '';   // 入力欄をクリア
+        });
+
+        // フィルターボタンクリック時
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                setFilter(button.dataset.filter);
+            });
+        });
+
+        // キーボードショートカット
+        document.addEventListener('keydown', (e) => {
+            // Ctrl + Enter で新しいTODOを追加
+            if (e.ctrlKey && e.key === 'Enter' && document.activeElement !== todoInput) {
+                todoInput.focus();
+            }
+            
+            // Escape で入力をキャンセル
+            if (e.key === 'Escape' && document.activeElement === todoInput) {
+                todoInput.value = '';
+                todoInput.blur();
+            }
+        });
+
+        // ローカルストレージのデータが他のタブで変更された時
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'todos') {
+                todos = JSON.parse(e.newValue) || [];
+                renderTodos();
+                updateStats();
+            }
+        });
+
+        // 初期化処理
+        function init() {
+            updateDate();           // 日付を表示
+            updateStats();          // 統計情報を表示
+            renderTodos();          // TODOリストを表示
+            
+            // 日付を毎分更新
+            setInterval(updateDate, 60000);
+        }
+
+        // アプリケーションの開始
+        init();
+    </script>
+</body>
+</html>

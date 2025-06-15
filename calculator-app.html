@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<!-- HTML5のドキュメントタイプ宣言 -->
+<html lang="ja">
+<head>
+    <!-- 文字エンコーディングをUTF-8に設定（日本語などの多言語に対応） -->
+    <meta charset="UTF-8">
+    <!-- レスポンシブデザイン用のビューポート設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ブラウザのタブに表示されるタイトル -->
+    <title>電卓アプリ</title>
+    <style>
+        /* 全要素に適用される基本スタイル設定 */
+        * {
+            margin: 0;              /* 外側の余白を0に */
+            padding: 0;             /* 内側の余白を0に */
+            box-sizing: border-box; /* paddingとborderを要素の幅・高さに含める */
+        }
+
+        /* ページ全体の背景とレイアウト設定 */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;          /* フォントの設定 */
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); /* 青系のグラデーション背景 */
+            min-height: 100vh;                                          /* 最小高さを画面の高さに */
+            display: flex;                                              /* フレックスボックスレイアウトを使用 */
+            justify-content: center;                                    /* 水平方向中央寄せ */
+            align-items: center;                                        /* 垂直方向中央寄せ */
+            padding: 20px;                                              /* 画面端からの余白 */
+        }
+
+        /* 電卓のメインコンテナ */
+        .calculator {
+            background: #2c3e50;                        /* ダークグレーの背景 */
+            border-radius: 20px;                        /* 角を丸くする */
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); /* 影で立体感を演出 */
+            overflow: hidden;                           /* はみ出した要素を隠す */
+            width: 100%;                                /* 幅を100%に */
+            max-width: 400px;                           /* 最大幅を400pxに制限 */
+            transition: transform 0.3s ease;             /* ホバー時のアニメーション設定 */
+        }
+
+        /* マウスを乗せた時の動き */
+        .calculator:hover {
+            transform: translateY(-5px);    /* 上に5px浮き上がる */
+        }
+
+        /* ディスプレイ部分のスタイル */
+        .display {
+            background: #34495e;                                /* 濃いグレーの背景 */
+            color: #ecf0f1;                                     /* 明るいグレーの文字色 */
+            font-size: 2.5rem;                                  /* 大きめの文字サイズ */
+            padding: 30px 20px;                                 /* 内側の余白 */
+            text-align: right;                                  /* 右寄せ */
+            min-height: 120px;                                  /* 最小高さを設定 */
+            word-wrap: break-word;                              /* 長い数字を折り返す */
+            overflow-wrap: break-word;                          /* 長い単語の折り返し */
+            box-shadow: inset 0 -2px 10px rgba(0, 0, 0, 0.3);  /* 内側の影で凹み感を演出 */
+            position: relative;                                 /* 相対位置指定 */
+        }
+
+        /* 計算履歴表示部分 */
+        .history {
+            font-size: 1rem;                    /* 小さめの文字サイズ */
+            color: #7f8c8d;                     /* グレーの文字色 */
+            position: absolute;                 /* 絶対位置指定 */
+            top: 10px;                          /* 上から10px */
+            right: 20px;                        /* 右から20px */
+            opacity: 0.7;                       /* 少し透明に */
+        }
+
+        /* ボタングリッドのコンテナ */
+        .buttons {
+            display: grid;                                      /* グリッドレイアウトを使用 */
+            grid-template-columns: repeat(4, 1fr);              /* 4列の等幅グリッド */
+            gap: 1px;                                           /* ボタン間の隙間 */
+            background: #1a252f;                                /* 隙間の色（暗い背景） */
+            padding: 1px;                                       /* 外枠の線 */
+        }
+
+        /* 各ボタンの基本スタイル */
+        button {
+            background: #34495e;                                /* グレーの背景 */
+            border: none;                                       /* 枠線なし */
+            color: #ecf0f1;                                     /* 明るいグレーの文字 */
+            font-size: 1.5rem;                                  /* 読みやすい文字サイズ */
+            padding: 25px;                                      /* 内側の余白 */
+            cursor: pointer;                                    /* カーソルを指のマークに */
+            transition: all 0.2s ease;                          /* ホバー時のアニメーション */
+            font-weight: 300;                                   /* 細めのフォント */
+            position: relative;                                 /* 相対位置指定 */
+            overflow: hidden;                                   /* はみ出し部分を隠す */
+        }
+
+        /* ボタンホバー時の効果 */
+        button:hover {
+            background: #4a5f7a;                /* 明るめの背景色 */
+            transform: scale(1.05);             /* 少し拡大 */
+            z-index: 1;                         /* 前面に表示 */
+        }
+
+        /* ボタンクリック時の効果 */
+        button:active {
+            transform: scale(0.95);             /* 少し縮小 */
+            background: #2c3e50;                /* 暗めの背景色 */
+        }
+
+        /* 演算子ボタンの特別なスタイル */
+        button.operator {
+            background: #e67e22;                /* オレンジ色の背景 */
+            font-weight: 400;                   /* 少し太めのフォント */
+        }
+
+        button.operator:hover {
+            background: #d35400;                /* ホバー時は濃いオレンジ */
+        }
+
+        /* イコールボタンの特別なスタイル */
+        button.equals {
+            background: #27ae60;                /* 緑色の背景 */
+            grid-column: span 2;                /* 2列分の幅を占める */
+            font-weight: 400;                   /* 少し太めのフォント */
+        }
+
+        button.equals:hover {
+            background: #229954;                /* ホバー時は濃い緑 */
+        }
+
+        /* クリアボタンの特別なスタイル */
+        button.clear {
+            background: #e74c3c;                /* 赤色の背景 */
+            font-weight: 400;                   /* 少し太めのフォント */
+        }
+
+        button.clear:hover {
+            background: #c0392b;                /* ホバー時は濃い赤 */
+        }
+
+        /* ゼロボタンを2列分に */
+        button.zero {
+            grid-column: span 2;                /* 2列分の幅を占める */
+        }
+
+        /* リップル効果のアニメーション */
+        @keyframes ripple {
+            to {
+                transform: scale(4);            /* 4倍に拡大 */
+                opacity: 0;                     /* 透明になる */
+            }
+        }
+
+        /* ボタンクリック時のリップル効果 */
+        button::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 50%;
+            left: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+        }
+
+        button.clicked::after {
+            animation: ripple 0.6s ease-out;
+        }
+
+        /* エラー時の揺れアニメーション */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* レスポンシブデザイン（スマートフォン対応） */
+        @media (max-width: 400px) {
+            .display {
+                font-size: 2rem;                /* 文字サイズを小さく */
+                padding: 20px 15px;             /* 余白を調整 */
+                min-height: 100px;              /* 高さを調整 */
+            }
+            
+            button {
+                padding: 20px;                  /* ボタンの余白を小さく */
+                font-size: 1.3rem;              /* 文字サイズを調整 */
+            }
+            
+            .history {
+                font-size: 0.9rem;              /* 履歴の文字サイズを調整 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 電卓のメインコンテナ -->
+    <div class="calculator">
+        <!-- ディスプレイ部分 -->
+        <div class="display" id="display">
+            <!-- 計算履歴を表示 -->
+            <div class="history" id="history"></div>
+            <!-- 現在の数値を表示 -->
+            <div id="current">0</div>
+        </div>
+        
+        <!-- ボタングリッド -->
+        <div class="buttons">
+            <!-- 1行目: クリア、削除、パーセント、割り算 -->
+            <button class="clear" onclick="clearDisplay()">C</button>
+            <button onclick="deleteLast()">⌫</button>
+            <button onclick="inputOperator('%')">%</button>
+            <button class="operator" onclick="inputOperator('/')">÷</button>
+            
+            <!-- 2行目: 7、8、9、掛け算 -->
+            <button onclick="inputNumber('7')">7</button>
+            <button onclick="inputNumber('8')">8</button>
+            <button onclick="inputNumber('9')">9</button>
+            <button class="operator" onclick="inputOperator('*')">×</button>
+            
+            <!-- 3行目: 4、5、6、引き算 -->
+            <button onclick="inputNumber('4')">4</button>
+            <button onclick="inputNumber('5')">5</button>
+            <button onclick="inputNumber('6')">6</button>
+            <button class="operator" onclick="inputOperator('-')">−</button>
+            
+            <!-- 4行目: 1、2、3、足し算 -->
+            <button onclick="inputNumber('1')">1</button>
+            <button onclick="inputNumber('2')">2</button>
+            <button onclick="inputNumber('3')">3</button>
+            <button class="operator" onclick="inputOperator('+')">+</button>
+            
+            <!-- 5行目: 0（2列分）、小数点、イコール（2列分） -->
+            <button class="zero" onclick="inputNumber('0')">0</button>
+            <button onclick="inputDecimal()">.</button>
+            <button class="equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数の定義
+        let currentValue = '0';         // 現在表示されている値
+        let previousValue = '';         // 前の値（演算子を押した時に保存）
+        let operation = null;           // 現在の演算子
+        let shouldResetScreen = false;  // 次の入力で画面をリセットするかのフラグ
+
+        // ディスプレイの要素を取得
+        const currentDisplay = document.getElementById('current');
+        const historyDisplay = document.getElementById('history');
+
+        // 画面を更新する関数
+        function updateDisplay() {
+            // 現在の値を画面に表示
+            currentDisplay.textContent = currentValue;
+            
+            // 計算履歴を表示（演算子がある場合）
+            if (operation && previousValue) {
+                historyDisplay.textContent = `${previousValue} ${getOperatorSymbol(operation)}`;
+            } else {
+                historyDisplay.textContent = '';
+            }
+        }
+
+        // 演算子を見やすい記号に変換する関数
+        function getOperatorSymbol(op) {
+            switch(op) {
+                case '*': return '×';
+                case '/': return '÷';
+                case '-': return '−';
+                default: return op;
+            }
+        }
+
+        // 数字を入力する関数
+        function inputNumber(num) {
+            // 画面リセットが必要な場合、または現在の値が0の場合
+            if (shouldResetScreen || currentValue === '0') {
+                currentValue = num;
+                shouldResetScreen = false;
+            } else if (currentValue.length < 12) { // 桁数制限（12桁まで）
+                currentValue += num;
+            }
+            updateDisplay();
+            addClickEffect(event.target);
+        }
+
+        // 小数点を入力する関数
+        function inputDecimal() {
+            // 画面リセットが必要な場合
+            if (shouldResetScreen) {
+                currentValue = '0.';
+                shouldResetScreen = false;
+            } else if (!currentValue.includes('.')) { // すでに小数点がない場合のみ追加
+                currentValue += '.';
+            }
+            updateDisplay();
+            addClickEffect(event.target);
+        }
+
+        // 演算子を入力する関数
+        function inputOperator(op) {
+            // 既に演算子が設定されている場合は先に計算
+            if (operation !== null) {
+                calculate();
+            }
+            
+            previousValue = currentValue;
+            operation = op;
+            shouldResetScreen = true;
+            updateDisplay();
+            addClickEffect(event.target);
+        }
+
+        // 計算を実行する関数
+        function calculate() {
+            // 演算子または前の値がない場合は何もしない
+            if (operation === null || previousValue === '') return;
+            
+            // 文字列を数値に変換
+            const prev = parseFloat(previousValue);
+            const current = parseFloat(currentValue);
+            let result;
+            
+            // 演算子に応じて計算
+            switch(operation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    // ゼロ除算のチェック
+                    if (current === 0) {
+                        showError();
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                case '%':
+                    result = prev % current;
+                    break;
+            }
+            
+            // 結果を文字列に変換（小数点以下の処理）
+            currentValue = result.toString();
+            
+            // 長すぎる結果を指数表記に変換
+            if (currentValue.length > 12) {
+                currentValue = result.toExponential(6);
+            }
+            
+            // 変数をリセット
+            operation = null;
+            previousValue = '';
+            shouldResetScreen = true;
+            updateDisplay();
+            addClickEffect(event.target);
+        }
+
+        // 画面をクリアする関数
+        function clearDisplay() {
+            currentValue = '0';
+            previousValue = '';
+            operation = null;
+            shouldResetScreen = false;
+            updateDisplay();
+            addClickEffect(event.target);
+        }
+
+        // 最後の文字を削除する関数
+        function deleteLast() {
+            // 画面リセットが必要な場合は何もしない
+            if (shouldResetScreen) return;
+            
+            // 文字列の長さが1の場合は0にする
+            if (currentValue.length === 1) {
+                currentValue = '0';
+            } else {
+                currentValue = currentValue.slice(0, -1);
+            }
+            updateDisplay();
+            addClickEffect(event.target);
+        }
+
+        // エラー表示（ゼロ除算など）
+        function showError() {
+            currentValue = 'エラー';
+            previousValue = '';
+            operation = null;
+            shouldResetScreen = true;
+            updateDisplay();
+            
+            // 電卓を揺らすアニメーション
+            const calculator = document.querySelector('.calculator');
+            calculator.classList.add('shake');
+            setTimeout(() => {
+                calculator.classList.remove('shake');
+            }, 500);
+        }
+
+        // ボタンクリック時のリップル効果
+        function addClickEffect(button) {
+            if (!button) return;
+            button.classList.add('clicked');
+            setTimeout(() => {
+                button.classList.remove('clicked');
+            }, 600);
+        }
+
+        // キーボード入力のサポート
+        document.addEventListener('keydown', (e) => {
+            // 数字キー
+            if (e.key >= '0' && e.key <= '9') {
+                inputNumber(e.key);
+            }
+            // 演算子キー
+            else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/' || e.key === '%') {
+                inputOperator(e.key);
+            }
+            // その他の特殊キー
+            else if (e.key === '.') {
+                inputDecimal();
+            }
+            else if (e.key === 'Enter' || e.key === '=') {
+                calculate();
+            }
+            else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+                clearDisplay();
+            }
+            else if (e.key === 'Backspace') {
+                deleteLast();
+            }
+        });
+
+        // 初期表示
+        updateDisplay();
+    </script>
+</body>
+</html>

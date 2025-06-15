@@ -11,6 +11,8 @@ This is a collection of interactive web applications built with vanilla JavaScri
 1. **clock-app.html** - Digital/analog clock with Japanese date display
 2. **omikuji-app.html** - Japanese fortune-telling app with animations  
 3. **quiz-app.html** - 3-choice quiz app with score tracking
+4. **calculator-app.html** - Calculator with basic operations and keyboard support
+5. **todo-app.html** - Todo list with local storage and filtering
 
 ## Development Guidelines
 
