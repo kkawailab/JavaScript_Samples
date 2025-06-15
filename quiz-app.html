@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<!-- HTML5のドキュメントタイプ宣言 -->
+<html lang="ja">
+<head>
+    <!-- 文字エンコーディングをUTF-8に設定 -->
+    <meta charset="UTF-8">
+    <!-- レスポンシブデザイン用のビューポート設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ブラウザのタブに表示されるタイトル -->
+    <title>3択クイズアプリ</title>
+    <style>
+        /* 全要素に適用される基本スタイル */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ページ全体の背景とレイアウト設定 */
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* メインコンテナ */
+        .quiz-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 装飾的な背景パターン */
+        .quiz-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* タイトル */
+        .title {
+            font-size: 2.5rem;
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* スコア表示 */
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .score-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* クイズカード */
+        .quiz-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        /* 問題番号 */
+        .question-number {
+            color: #667eea;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* 問題文 */
+        .question-text {
+            font-size: 1.3rem;
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        /* 選択肢のコンテナ */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 選択肢ボタン */
+        .option-button {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 選択肢ボタンのホバー効果 */
+        .option-button:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 正解の選択肢 */
+        .option-button.correct {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            border-color: #27ae60;
+            animation: correctAnswer 0.6s ease;
+        }
+
+        /* 不正解の選択肢 */
+        .option-button.incorrect {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border-color: #c0392b;
+            animation: incorrectAnswer 0.6s ease;
+        }
+
+        /* 選択肢の番号 */
+        .option-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        /* 結果表示画面 */
+        .result-screen {
+            text-align: center;
+            display: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .result-screen.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* 結果のタイトル */
+        .result-title {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* スコア表示 */
+        .final-score {
+            font-size: 3rem;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        /* 評価メッセージ */
+        .result-message {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        /* リトライボタン */
+        .retry-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* プログレスバー */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        /* アニメーション定義 */
+        @keyframes correctAnswer {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes incorrectAnswer {
+            0% { transform: translateX(0); }
+            10% { transform: translateX(-10px); }
+            20% { transform: translateX(10px); }
+            30% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            50% { transform: translateX(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 600px) {
+            .quiz-container {
+                padding: 30px 20px;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .question-text {
+                font-size: 1.1rem;
+            }
+
+            .option-button {
+                padding: 15px;
+                font-size: 1rem;
+            }
+
+            .final-score {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- メインコンテナ -->
+    <div class="quiz-container">
+        <!-- タイトル -->
+        <h1 class="title">3択クイズ</h1>
+        
+        <!-- クイズ画面 -->
+        <div class="quiz-screen" id="quizScreen">
+            <!-- スコアボード -->
+            <div class="score-board">
+                <div class="score-item">問題 <span id="currentQuestion">1</span> / <span id="totalQuestions">10</span></div>
+                <div class="score-item">スコア: <span id="score">0</span></div>
+            </div>
+            
+            <!-- プログレスバー -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <!-- クイズカード -->
+            <div class="quiz-card">
+                <!-- 問題番号 -->
+                <div class="question-number" id="questionNumber">問題 1</div>
+                
+                <!-- 問題文 -->
+                <div class="question-text" id="questionText">
+                    ここに問題文が表示されます
+                </div>
+                
+                <!-- 選択肢 -->
+                <div class="options-container" id="optionsContainer">
+                    <!-- JavaScriptで動的に生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 結果表示画面 -->
+        <div class="result-screen" id="resultScreen">
+            <h2 class="result-title">クイズ終了！</h2>
+            <div class="final-score" id="finalScore">0 / 10</div>
+            <p class="result-message" id="resultMessage">お疲れ様でした！</p>
+            <button class="retry-button" id="retryButton">もう一度挑戦</button>
+        </div>
+    </div>
+
+    <script>
+        // クイズデータ（実際にはもっと多くの問題を用意することができます）
+        const quizData = [
+            {
+                question: "日本の首都はどこですか？",
+                options: ["大阪", "東京", "京都"],
+                correct: 1
+            },
+            {
+                question: "富士山の高さは約何メートルですか？",
+                options: ["2,776m", "3,776m", "4,776m"],
+                correct: 1
+            },
+            {
+                question: "日本で一番大きい湖は？",
+                options: ["琵琶湖", "摩周湖", "洞爺湖"],
+                correct: 0
+            },
+            {
+                question: "日本の国鳥は？",
+                options: ["ツル", "トキ", "キジ"],
+                correct: 2
+            },
+            {
+                question: "桜の花びらは通常何枚ですか？",
+                options: ["3枚", "5枚", "7枚"],
+                correct: 1
+            },
+            {
+                question: "日本の通貨単位は？",
+                options: ["ウォン", "元", "円"],
+                correct: 2
+            },
+            {
+                question: "東京タワーの高さは？",
+                options: ["233m", "333m", "433m"],
+                correct: 1
+            },
+            {
+                question: "日本の人口は約何人？",
+                options: ["8,000万人", "1億人", "1億2,500万人"],
+                correct: 2
+            },
+            {
+                question: "日本の国花は？",
+                options: ["桜", "梅", "菊"],
+                correct: 0
+            },
+            {
+                question: "日本で一番高い山は？",
+                options: ["富士山", "北岳", "穂高岳"],
+                correct: 0
+            }
+        ];
+
+        // グローバル変数
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        // DOM要素の取得
+        const quizScreen = document.getElementById('quizScreen');
+        const resultScreen = document.getElementById('resultScreen');
+        const questionNumber = document.getElementById('questionNumber');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const currentQuestionSpan = document.getElementById('currentQuestion');
+        const totalQuestionsSpan = document.getElementById('totalQuestions');
+        const scoreSpan = document.getElementById('score');
+        const progressFill = document.getElementById('progressFill');
+        const finalScore = document.getElementById('finalScore');
+        const resultMessage = document.getElementById('resultMessage');
+        const retryButton = document.getElementById('retryButton');
+
+        // 初期化
+        function init() {
+            totalQuestionsSpan.textContent = quizData.length;
+            loadQuestion();
+        }
+
+        // 問題を読み込む関数
+        function loadQuestion() {
+            // 現在の問題データを取得
+            const currentQuestion = quizData[currentQuestionIndex];
+            
+            // 問題番号と問題文を更新
+            questionNumber.textContent = `問題 ${currentQuestionIndex + 1}`;
+            currentQuestionSpan.textContent = currentQuestionIndex + 1;
+            questionText.textContent = currentQuestion.question;
+            
+            // プログレスバーを更新
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressFill.style.width = `${progress}%`;
+            
+            // 選択肢をクリア
+            optionsContainer.innerHTML = '';
+            
+            // 選択肢を生成
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.innerHTML = `
+                    <span class="option-number">${index + 1}</span>
+                    ${option}
+                `;
+                button.addEventListener('click', () => selectOption(index));
+                optionsContainer.appendChild(button);
+            });
+            
+            // 回答フラグをリセット
+            isAnswered = false;
+        }
+
+        // 選択肢を選んだときの処理
+        function selectOption(selectedIndex) {
+            // すでに回答済みの場合は何もしない
+            if (isAnswered) return;
+            
+            isAnswered = true;
+            const currentQuestion = quizData[currentQuestionIndex];
+            const optionButtons = optionsContainer.querySelectorAll('.option-button');
+            
+            // 正解かどうかチェック
+            if (selectedIndex === currentQuestion.correct) {
+                // 正解の場合
+                score++;
+                scoreSpan.textContent = score;
+                optionButtons[selectedIndex].classList.add('correct');
+            } else {
+                // 不正解の場合
+                optionButtons[selectedIndex].classList.add('incorrect');
+                // 正解を表示
+                optionButtons[currentQuestion.correct].classList.add('correct');
+            }
+            
+            // 全ての選択肢を無効化
+            optionButtons.forEach(button => {
+                button.style.cursor = 'not-allowed';
+                button.style.pointerEvents = 'none';
+            });
+            
+            // 次の問題へ（1.5秒後）
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < quizData.length) {
+                    loadQuestion();
+                } else {
+                    showResult();
+                }
+            }, 1500);
+        }
+
+        // 結果を表示する関数
+        function showResult() {
+            // クイズ画面を非表示、結果画面を表示
+            quizScreen.style.display = 'none';
+            resultScreen.classList.add('show');
+            
+            // スコアを表示
+            finalScore.textContent = `${score} / ${quizData.length}`;
+            
+            // 評価メッセージを設定
+            const percentage = (score / quizData.length) * 100;
+            let message = '';
+            
+            if (percentage === 100) {
+                message = '完璧です！素晴らしい！🎉';
+            } else if (percentage >= 80) {
+                message = 'とても良くできました！👏';
+            } else if (percentage >= 60) {
+                message = 'よくできました！👍';
+            } else if (percentage >= 40) {
+                message = 'もう少し頑張りましょう！💪';
+            } else {
+                message = '次回はもっと頑張りましょう！📚';
+            }
+            
+            resultMessage.textContent = message;
+        }
+
+        // リトライ機能
+        function retry() {
+            // 変数をリセット
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreSpan.textContent = 0;
+            
+            // 画面を切り替え
+            resultScreen.classList.remove('show');
+            quizScreen.style.display = 'block';
+            
+            // 最初の問題を読み込む
+            loadQuestion();
+        }
+
+        // イベントリスナーの設定
+        retryButton.addEventListener('click', retry);
+
+        // アプリケーションの開始
+        init();
+    </script>
+</body>
+</html>

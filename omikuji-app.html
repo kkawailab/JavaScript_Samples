@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<!-- HTML5のドキュメントタイプ宣言 -->
+<html lang="ja">
+<head>
+    <!-- 文字エンコーディングをUTF-8に設定 -->
+    <meta charset="UTF-8">
+    <!-- レスポンシブデザイン用のビューポート設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ブラウザのタブに表示されるタイトル -->
+    <title>おみくじアプリ</title>
+    <style>
+        /* 全要素に適用される基本スタイル */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ページ全体の背景とレイアウト設定 */
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #f5ddc6 0%, #f0a5a5 50%, #e8c4d6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            /* 和風の背景パターンを追加 */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 背景の装飾的な桜の花びら */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(255, 182, 193, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 182, 193, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 182, 193, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* メインコンテナ */
+        .omikuji-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* タイトル */
+        .title {
+            font-size: 2.5rem;
+            color: #d63384;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* サブタイトル */
+        .subtitle {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        /* おみくじボックス（筒） */
+        .omikuji-box {
+            width: 200px;
+            height: 250px;
+            margin: 0 auto 30px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        /* ホバー時の動き */
+        .omikuji-box:hover {
+            transform: translateY(-5px);
+        }
+
+        /* おみくじの筒のデザイン */
+        .omikuji-cylinder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #8b4513 0%, #a0522d 50%, #8b4513 100%);
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 
+                inset -5px 0 10px rgba(0, 0, 0, 0.3),
+                inset 5px 0 10px rgba(255, 255, 255, 0.2),
+                0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 筒の上部の蓋 */
+        .omikuji-top {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 30px;
+            background: #6b3410;
+            border-radius: 50%;
+            box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* おみくじを引くボタン */
+        .draw-button {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(255, 75, 87, 0.3);
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        /* ボタンのホバー効果 */
+        .draw-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 75, 87, 0.4);
+        }
+
+        /* ボタンのクリック効果 */
+        .draw-button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 15px rgba(255, 75, 87, 0.3);
+        }
+
+        /* 結果表示エリア */
+        .result-area {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        /* 結果が表示された時 */
+        .result-area.show {
+            opacity: 1;
+        }
+
+        /* おみくじの結果（運勢） */
+        .fortune-result {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ff4757);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            animation: fadeInScale 0.8s ease-out;
+        }
+
+        /* 運勢の説明文 */
+        .fortune-description {
+            font-size: 1.1rem;
+            color: #555;
+            line-height: 1.8;
+            max-width: 350px;
+            margin: 0 auto;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        /* アニメーション定義 */
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 振るアニメーション */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-10px) rotate(-5deg); }
+            20% { transform: translateX(10px) rotate(5deg); }
+            30% { transform: translateX(-10px) rotate(-5deg); }
+            40% { transform: translateX(10px) rotate(5deg); }
+            50% { transform: translateX(-5px) rotate(-2deg); }
+            60% { transform: translateX(5px) rotate(2deg); }
+            70% { transform: translateX(-5px) rotate(-2deg); }
+            80% { transform: translateX(5px) rotate(2deg); }
+            90% { transform: translateX(-2px) rotate(-1deg); }
+        }
+
+        /* 振っている状態のクラス */
+        .shaking {
+            animation: shake 1s ease-in-out;
+        }
+
+        /* リセットボタン */
+        .reset-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            font-size: 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            opacity: 0;
+            display: none;
+        }
+
+        .reset-button.show {
+            display: inline-block;
+            opacity: 1;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .reset-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 480px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .omikuji-box {
+                width: 150px;
+                height: 200px;
+            }
+            
+            .fortune-result {
+                font-size: 3rem;
+            }
+            
+            .draw-button {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- メインコンテナ -->
+    <div class="omikuji-container">
+        <!-- タイトル -->
+        <h1 class="title">おみくじ</h1>
+        <p class="subtitle">今日の運勢を占おう！</p>
+        
+        <!-- おみくじの筒 -->
+        <div class="omikuji-box" id="omikujiBox">
+            <div class="omikuji-top"></div>
+            <div class="omikuji-cylinder"></div>
+        </div>
+        
+        <!-- おみくじを引くボタン -->
+        <button class="draw-button" id="drawButton">おみくじを引く</button>
+        
+        <!-- 結果表示エリア -->
+        <div class="result-area" id="resultArea">
+            <div class="fortune-result" id="fortuneResult"></div>
+            <div class="fortune-description" id="fortuneDescription"></div>
+        </div>
+        
+        <!-- もう一度引くボタン -->
+        <button class="reset-button" id="resetButton">もう一度引く</button>
+    </div>
+
+    <script>
+        // おみくじの運勢データ
+        const fortunes = [
+            {
+                name: '大吉',
+                description: '素晴らしい一日になるでしょう！全ての願いが叶う最高の運勢です。積極的に行動することで、さらに運気が上昇します。',
+                color: '#ff1744'
+            },
+            {
+                name: '吉',
+                description: '良いことが起こる予感。前向きな気持ちで過ごせば、チャンスを掴めるでしょう。周りの人との関係も良好です。',
+                color: '#ff6b6b'
+            },
+            {
+                name: '中吉',
+                description: '穏やかで安定した一日。大きな変化はありませんが、着実に前進できます。日々の小さな幸せに感謝しましょう。',
+                color: '#ff9f43'
+            },
+            {
+                name: '小吉',
+                description: 'ささやかな幸運が訪れます。焦らず、自分のペースで進みましょう。小さな優しさが大きな喜びにつながります。',
+                color: '#feca57'
+            },
+            {
+                name: '末吉',
+                description: '今は準備の時。努力を続ければ、やがて良い結果が訪れます。忍耐強く、前向きな姿勢を保ちましょう。',
+                color: '#48dbfb'
+            },
+            {
+                name: '凶',
+                description: '慎重に行動すべき日。無理をせず、今日は守りの姿勢で。明日はきっと良い日になります。',
+                color: '#0abde3'
+            },
+            {
+                name: '大凶',
+                description: '試練の時ですが、これも成長のチャンス。困難を乗り越えることで、より強くなれます。希望を失わないで。',
+                color: '#006ba6'
+            }
+        ];
+
+        // DOM要素の取得
+        const drawButton = document.getElementById('drawButton');
+        const resetButton = document.getElementById('resetButton');
+        const omikujiBox = document.getElementById('omikujiBox');
+        const resultArea = document.getElementById('resultArea');
+        const fortuneResult = document.getElementById('fortuneResult');
+        const fortuneDescription = document.getElementById('fortuneDescription');
+
+        // おみくじを引く関数
+        function drawOmikuji() {
+            // ボタンを無効化
+            drawButton.disabled = true;
+            drawButton.style.opacity = '0.5';
+            
+            // おみくじの筒を振るアニメーション
+            omikujiBox.classList.add('shaking');
+            
+            // 1秒後に結果を表示
+            setTimeout(() => {
+                // ランダムに運勢を選択
+                const randomIndex = Math.floor(Math.random() * fortunes.length);
+                const selectedFortune = fortunes[randomIndex];
+                
+                // 結果を表示
+                fortuneResult.textContent = selectedFortune.name;
+                fortuneResult.style.background = `linear-gradient(135deg, ${selectedFortune.color}, ${selectedFortune.color}dd)`;
+                fortuneResult.style.webkitBackgroundClip = 'text';
+                fortuneResult.style.webkitTextFillColor = 'transparent';
+                fortuneResult.style.backgroundClip = 'text';
+                
+                fortuneDescription.textContent = selectedFortune.description;
+                
+                // 結果エリアを表示
+                resultArea.classList.add('show');
+                
+                // リセットボタンを表示
+                resetButton.classList.add('show');
+                
+                // アニメーションクラスを削除
+                omikujiBox.classList.remove('shaking');
+                
+                // おみくじボタンを非表示
+                drawButton.style.display = 'none';
+            }, 1000);
+        }
+
+        // リセット関数
+        function resetOmikuji() {
+            // 結果を非表示
+            resultArea.classList.remove('show');
+            resetButton.classList.remove('show');
+            
+            // 少し待ってからボタンを復活
+            setTimeout(() => {
+                drawButton.style.display = 'inline-block';
+                drawButton.disabled = false;
+                drawButton.style.opacity = '1';
+                resetButton.style.display = 'none';
+                
+                // 結果をクリア
+                fortuneResult.textContent = '';
+                fortuneDescription.textContent = '';
+            }, 500);
+        }
+
+        // イベントリスナーの設定
+        drawButton.addEventListener('click', drawOmikuji);
+        resetButton.addEventListener('click', resetOmikuji);
+        
+        // おみくじの筒をクリックしても引ける
+        omikujiBox.addEventListener('click', () => {
+            if (!drawButton.disabled && drawButton.style.display !== 'none') {
+                drawOmikuji();
+            }
+        });
+    </script>
+</body>
+</html>

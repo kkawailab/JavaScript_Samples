@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<!-- HTML5のドキュメントタイプ宣言。これがHTML5文書であることをブラウザに伝えます -->
+<html lang="ja">
+<head>
+    <!-- 文字エンコーディングをUTF-8に設定（日本語などの多言語に対応） -->
+    <meta charset="UTF-8">
+    <!-- レスポンシブデザイン用のビューポート設定。モバイル端末でも適切に表示されるようにします -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ブラウザのタブに表示されるタイトル -->
+    <title>Modern Clock App</title>
+    <style>
+        /* 全要素に適用される基本スタイル設定 */
+        * {
+            margin: 0;              /* 外側の余白を0に */
+            padding: 0;             /* 内側の余白を0に */
+            box-sizing: border-box; /* paddingとborderを要素の幅・高さに含める */
+        }
+
+        /* ページ全体の背景とレイアウト設定 */
+        body {
+            font-family: 'Arial', sans-serif;                              /* フォントの設定 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* 斜め方向のグラデーション背景 */
+            min-height: 100vh;                                             /* 最小高さを画面の高さに */
+            display: flex;                                                 /* フレックスボックスレイアウトを使用 */
+            justify-content: center;                                       /* 水平方向中央寄せ */
+            align-items: center;                                           /* 垂直方向中央寄せ */
+            color: white;                                                  /* 文字色を白に */
+        }
+
+        /* 時計全体を包むコンテナのスタイル */
+        .clock-container {
+            background: rgba(255, 255, 255, 0.1);          /* 半透明の白背景 */
+            backdrop-filter: blur(10px);                   /* 背景をぼかすガラスエフェクト */
+            border-radius: 30px;                           /* 角を丸くする */
+            padding: 40px 60px;                            /* 内側の余白 */
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);   /* 影を追加して立体感を出す */
+            border: 1px solid rgba(255, 255, 255, 0.2);   /* 薄い白の枠線 */
+            text-align: center;                            /* テキストを中央寄せ */
+            transition: transform 0.3s ease;               /* ホバー時のアニメーション設定 */
+        }
+
+        /* マウスを乗せた時の動き */
+        .clock-container:hover {
+            transform: translateY(-5px);    /* 上に5px浮き上がる */
+        }
+
+        /* デジタル時計の時刻表示部分 */
+        .time-display {
+            font-size: 5rem;                            /* 文字サイズを大きく */
+            font-weight: 300;                           /* 細めのフォント */
+            letter-spacing: 5px;                        /* 文字間隔を広げる */
+            margin-bottom: 20px;                        /* 下側の余白 */
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* 文字に影をつける */
+            font-variant-numeric: tabular-nums;         /* 数字の幅を統一（時刻がズレないように） */
+        }
+
+        /* 秒数表示の特別なスタイル */
+        .seconds {
+            font-size: 2.5rem;                    /* 時分より小さいサイズ */
+            color: rgba(255, 255, 255, 0.8);      /* 少し透明にして目立たなくする */
+            vertical-align: super;                /* 上付き文字のように表示 */
+        }
+
+        /* 日付表示のスタイル */
+        .date-display {
+            font-size: 1.2rem;                    /* 適度な文字サイズ */
+            letter-spacing: 2px;                  /* 文字間隔 */
+            color: rgba(255, 255, 255, 0.9);      /* わずかに透明な白 */
+            margin-bottom: 10px;                  /* 下側の余白 */
+        }
+
+        /* 曜日表示のスタイル */
+        .day-display {
+            font-size: 1rem;                      /* 日付より少し小さめ */
+            letter-spacing: 1px;                  /* 文字間隔 */
+            color: rgba(255, 255, 255, 0.7);      /* さらに透明度を上げて控えめに */
+        }
+
+        /* アナログ時計の文字盤 */
+        .clock-face {
+            width: 300px;                               /* 時計の幅 */
+            height: 300px;                              /* 時計の高さ */
+            margin: 30px auto;                          /* 上下に余白を取り、左右中央寄せ */
+            position: relative;                         /* 針の位置決めの基準点にする */
+            background: rgba(255, 255, 255, 0.05);      /* わずかに透明な白背景 */
+            border-radius: 50%;                         /* 完全な円にする */
+            border: 2px solid rgba(255, 255, 255, 0.1); /* 薄い枠線 */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* 影で立体感 */
+        }
+
+        /* 時計の針の共通スタイル */
+        .hand {
+            position: absolute;                      /* 絶対位置指定 */
+            top: 50%;                               /* 上から50%の位置 */
+            left: 50%;                              /* 左から50%の位置（中心） */
+            transform-origin: 50% 100%;             /* 回転の基準点を針の根元に設定 */
+            background: white;                      /* 白色の針 */
+            border-radius: 10px;                    /* 針の先端を丸くする */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* 針に影をつける */
+        }
+
+        /* 時針のスタイル */
+        .hour-hand {
+            width: 6px;                             /* 太めの針 */
+            height: 90px;                           /* 短めの長さ */
+            margin-left: -3px;                      /* 中心に配置するため左にずらす */
+            margin-top: -90px;                      /* 中心から上に伸びるように */
+            background: rgba(255, 255, 255, 0.9);   /* わずかに透明 */
+        }
+
+        /* 分針のスタイル */
+        .minute-hand {
+            width: 4px;                             /* 中くらいの太さ */
+            height: 120px;                          /* 中くらいの長さ */
+            margin-left: -2px;                      /* 中心に配置 */
+            margin-top: -120px;                     /* 中心から上に伸びる */
+            background: rgba(255, 255, 255, 0.8);   /* 少し透明 */
+        }
+
+        /* 秒針のスタイル */
+        .second-hand {
+            width: 2px;                             /* 細い針 */
+            height: 130px;                          /* 最も長い */
+            margin-left: -1px;                      /* 中心に配置 */
+            margin-top: -130px;                     /* 中心から上に伸びる */
+            background: #ff6b6b;                    /* 赤色で目立たせる */
+        }
+
+        /* 時計の中心の点 */
+        .center-dot {
+            position: absolute;                     /* 絶対位置指定 */
+            top: 50%;                              /* 上から50% */
+            left: 50%;                             /* 左から50% */
+            width: 12px;                           /* 点の幅 */
+            height: 12px;                          /* 点の高さ */
+            background: white;                     /* 白色 */
+            border-radius: 50%;                    /* 完全な円 */
+            transform: translate(-50%, -50%);      /* 完全に中心に配置 */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* 影をつける */
+        }
+
+        /* 時計の数字を配置するコンテナ */
+        .clock-numbers {
+            position: absolute;                     /* 絶対位置指定 */
+            width: 100%;                           /* 親要素の幅いっぱい */
+            height: 100%;                          /* 親要素の高さいっぱい */
+        }
+
+        /* 個々の数字のスタイル */
+        .clock-number {
+            position: absolute;                     /* 絶対位置指定で配置 */
+            font-size: 1.2rem;                     /* 読みやすいサイズ */
+            font-weight: 500;                      /* 中太のフォント */
+            color: rgba(255, 255, 255, 0.8);       /* 少し透明な白 */
+        }
+
+        /* スマートフォンなど小さい画面用のスタイル（768px以下） */
+        @media (max-width: 768px) {
+            .clock-container {
+                padding: 30px 40px;                 /* 余白を少し小さく */
+            }
+            
+            .time-display {
+                font-size: 3.5rem;                  /* 文字サイズを小さく */
+            }
+            
+            .seconds {
+                font-size: 2rem;                    /* 秒数も小さく */
+            }
+            
+            .clock-face {
+                width: 250px;                       /* 時計を小さく */
+                height: 250px;
+            }
+            
+            .hour-hand {
+                height: 75px;                       /* 針も短く */
+                margin-top: -75px;
+            }
+            
+            .minute-hand {
+                height: 100px;
+                margin-top: -100px;
+            }
+            
+            .second-hand {
+                height: 110px;
+                margin-top: -110px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 時計全体を包むメインコンテナ -->
+    <div class="clock-container">
+        <!-- 日付を表示する場所（JavaScriptで内容を挿入） -->
+        <div class="date-display" id="date"></div>
+        <!-- 曜日を表示する場所 -->
+        <div class="day-display" id="day"></div>
+        <!-- デジタル時計の表示部分 -->
+        <div class="time-display">
+            <!-- 時、分、秒をそれぞれ個別のspan要素で管理 -->
+            <span id="hours">00</span>:<span id="minutes">00</span><span class="seconds" id="seconds">00</span>
+        </div>
+        <!-- アナログ時計の部分 -->
+        <div class="clock-face">
+            <!-- 12, 3, 6, 9の数字を配置 -->
+            <div class="clock-numbers">
+                <!-- インラインスタイルで各数字の位置を直接指定 -->
+                <div class="clock-number" style="top: 5%; left: 50%; transform: translateX(-50%);">12</div>
+                <div class="clock-number" style="top: 50%; right: 5%; transform: translateY(-50%);">3</div>
+                <div class="clock-number" style="bottom: 5%; left: 50%; transform: translateX(-50%);">6</div>
+                <div class="clock-number" style="top: 50%; left: 5%; transform: translateY(-50%);">9</div>
+            </div>
+            <!-- 時針、分針、秒針（JavaScriptで回転を制御） -->
+            <div class="hand hour-hand" id="hourHand"></div>
+            <div class="hand minute-hand" id="minuteHand"></div>
+            <div class="hand second-hand" id="secondHand"></div>
+            <!-- 中心の装飾的な点 -->
+            <div class="center-dot"></div>
+        </div>
+    </div>
+
+    <script>
+        // 時計を更新する関数
+        function updateClock() {
+            // 現在の日時を取得
+            const now = new Date();
+            
+            // ===== デジタル時計の更新 =====
+            // getHours()で時間(0-23)、getMinutes()で分(0-59)、getSeconds()で秒(0-59)を取得
+            // padStart(2, '0')で1桁の数字の前に0を追加（例: 9 → 09）
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            
+            // HTMLの要素に時刻を表示
+            document.getElementById('hours').textContent = hours;
+            document.getElementById('minutes').textContent = minutes;
+            document.getElementById('seconds').textContent = seconds;
+            
+            // ===== 日付の更新 =====
+            // toLocaleDateStringで日本語形式の日付を生成
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString('ja-JP', options);
+            document.getElementById('date').textContent = dateString;
+            
+            // ===== 曜日の更新 =====
+            const dayOptions = { weekday: 'long' };
+            const dayString = now.toLocaleDateString('ja-JP', dayOptions);
+            document.getElementById('day').textContent = dayString;
+            
+            // ===== アナログ時計の針の角度計算 =====
+            // 時針の計算：
+            // - 12時間で360度回転するので、1時間あたり30度
+            // - 分によっても少し動くので、分の値も考慮
+            // - 最後に90度引くのは、CSSの0度が3時の位置のため12時に調整
+            const hoursDegrees = ((now.getHours() % 12) / 12) * 360 + ((now.getMinutes() / 60) * 30) - 90;
+            
+            // 分針の計算：
+            // - 60分で360度回転するので、1分あたり6度
+            // - 秒によっても少し動くので、秒の値も考慮
+            const minutesDegrees = (now.getMinutes() / 60) * 360 + ((now.getSeconds() / 60) * 6) - 90;
+            
+            // 秒針の計算：
+            // - 60秒で360度回転するので、1秒あたり6度
+            const secondsDegrees = (now.getSeconds() / 60) * 360 - 90;
+            
+            // 計算した角度でそれぞれの針を回転
+            document.getElementById('hourHand').style.transform = `rotate(${hoursDegrees}deg)`;
+            document.getElementById('minuteHand').style.transform = `rotate(${minutesDegrees}deg)`;
+            document.getElementById('secondHand').style.transform = `rotate(${secondsDegrees}deg)`;
+        }
+
+        // ページが読み込まれたらすぐに時計を表示
+        updateClock();
+        
+        // setIntervalで1000ミリ秒（1秒）ごとにupdateClock関数を実行
+        setInterval(updateClock, 1000);
+        
+        // 秒針のスムーズなアニメーション設定
+        const secondHand = document.getElementById('secondHand');
+        // cubic-bezierでカチッとした動きを再現（実際の時計のような動き）
+        secondHand.style.transition = 'transform 0.1s cubic-bezier(0.1, 2.7, 0.58, 1)';
+    </script>
+</body>
+</html>
